@@ -6,6 +6,8 @@ import java.net.URI;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
+import java.util.stream.Collector;
+import java.util.stream.Collectors;
 
 import javax.annotation.PostConstruct;
 
@@ -19,6 +21,7 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
 
@@ -118,5 +121,25 @@ public class ProductController {
 
         // 204 (No Content): 原先資料存在的，但被刪除了；404: 原先並不存在。
         return isRemoved ? ResponseEntity.noContent().build() : ResponseEntity.notFound().build();
+    }
+
+    @GetMapping("/getAllProduct")
+    public ResponseEntity<List<Product>> getAllProduct() {
+        // TODO: stream and collect concept.
+        List<Product> products = productDB.stream().collect(Collectors.toList());
+
+        return ResponseEntity.ok().body(products);
+    }
+
+    /**
+     * Reference:
+     * https://chikuwa-tech-study.blogspot.com/2021/05/spring-boot-controller-2.html
+     * 
+     */
+    @GetMapping("/searchProduct")
+    public ResponseEntity<List<Product>> getProductName(@RequestParam(value = "name", defaultValue = "") String name) {
+        List<Product> product = productDB.stream().filter(p -> p.getName().toUpperCase().contains(name.toUpperCase()))
+                .collect(Collectors.toList());
+        return ResponseEntity.ok().body(product);
     }
 }
