@@ -12,6 +12,7 @@ import javax.annotation.PostConstruct;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -95,7 +96,7 @@ public class ProductController {
         return ResponseEntity.created(location).body(product);
     }
 
-    @PutMapping("change_product/{id}")
+    @PutMapping("/change_product/{id}")
     public ResponseEntity<Product> changeProduct(@PathVariable String id, @RequestBody Product request) {
         Optional<Product> productOp = productDB.stream().filter(p -> p.getId().equals(id)).findFirst();
 
@@ -108,5 +109,14 @@ public class ProductController {
         } else {
             return ResponseEntity.notFound().build();
         }
+    }
+
+    @DeleteMapping("/delete_product/{id}")
+    public ResponseEntity<Product> deleteProduct(@PathVariable("id") String id) {
+        // TODO: removeif, or ListArray function.
+        boolean isRemoved = productDB.removeIf(p -> p.getId().equals(id));
+
+        // 204 (No Content): 原先資料存在的，但被刪除了；404: 原先並不存在。
+        return isRemoved ? ResponseEntity.noContent().build() : ResponseEntity.notFound().build();
     }
 }
