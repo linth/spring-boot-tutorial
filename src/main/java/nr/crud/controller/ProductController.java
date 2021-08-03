@@ -1,12 +1,15 @@
 package nr.crud.controller;
 
 import nr.crud.entity.Product;
+import nr.crud.parameter.ProductQueryParameter;
 
 import java.net.URI;
 import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.List;
+import java.util.Objects;
 import java.util.Optional;
-import java.util.stream.Collector;
+// import java.util.stream.Collector;
 import java.util.stream.Collectors;
 
 import javax.annotation.PostConstruct;
@@ -16,6 +19,7 @@ import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.ModelAttribute;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
@@ -135,11 +139,47 @@ public class ProductController {
      * Reference:
      * https://chikuwa-tech-study.blogspot.com/2021/05/spring-boot-controller-2.html
      * 
+     * 簡單單一搜尋API
      */
     @GetMapping("/searchProduct")
     public ResponseEntity<List<Product>> getProductName(@RequestParam(value = "name", defaultValue = "") String name) {
         List<Product> product = productDB.stream().filter(p -> p.getName().toUpperCase().contains(name.toUpperCase()))
                 .collect(Collectors.toList());
         return ResponseEntity.ok().body(product);
+    }
+
+    /**
+     * 更多查詢字串
+     */
+    @GetMapping
+    public ResponseEntity<List<Product>> getProducts(@ModelAttribute ProductQueryParameter param) {
+        String keyword = param.getKeyword();
+        String orderBy = param.getOrderBy();
+        String sortRule = param.getSortRule();
+
+        Comparator<Product> comparator = genSortComparator(orderBy, sortRule);
+
+        List<Product> product = productDB.stream()
+                .filter(p -> p.getName().toUpperCase().contains(keyword.toUpperCase())).sorted(comparator)
+                .collect(Collectors.toList());
+
+        return ResponseEntity.ok().body(product);
+    }
+
+    private Comparator<Product> genSortComparator(String orderBy, String sortRule) {
+        // TODO: compare function, Objects concept.
+        Comparator<Product> comparator = (p1, p2) -> 0;
+
+        if (Objects.isNull(orderBy) || Objects.isNull(sortRule)) {
+            return comparator;
+        }
+
+        if (orderBy.equalsIgnoreCase("price")) {
+            comparator = Comparator.comparing(Product::getPrice);
+        } else if (orderBy.equalsIgnoreCase("name")) {
+            comparator = Comparator.comparing(Product::getName);
+        }
+
+        return sortRule.equalsIgnoreCase("desc") ? comparator.reversed() : comparator;
     }
 }
